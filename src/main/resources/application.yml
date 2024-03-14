@@ -1,0 +1,132 @@
+server:
+  jetty:
+    threads:
+      #acceptors线程池用于接受HTTP请求
+      acceptors: 8
+      #selectors线程池用于处理HTTP数据包
+      selectors: 16
+      #worker线程池负责调用Web方法
+      min: 8
+      max: 200
+  port: 7700
+  servlet:
+    context-path: /his-api
+
+  ssl:
+    enabled: true
+    key-store-type: PKCS12
+    key-store: classpath:keystore.p12
+    key-store-password: abc123456
+
+spring:
+  servlet:
+    multipart:
+      #允许上传文件
+      enabled: true
+      #每个文件最大不能超过20M
+      max-file-size: 20MB
+      #HTTP请求不能超过20M
+      max-request-size: 20MB
+
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://212.64.16.60:8066/his?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true
+      username: root
+      password: abc123456
+      initial-size: 8
+      max-active: 16
+      min-idle: 8
+      max-wait: 60000
+      test-while-idle: true
+      test-on-borrow: true
+      test-on-return: false
+      validation-query: SELECT 1
+
+  data:
+    mongodb:
+      host: 212.64.16.60
+      port: 27017
+      database: his
+      #admin是MongoDB用于验证用户身份的逻辑库
+      authentication-database: admin
+      username: admin
+      password: abc123456
+
+  redis:
+    database: 0
+    host: 212.64.16.60
+    port: 6379
+    password: abc123456
+    jedis:
+      pool:
+        #连接超时的最大时间
+        max-active: 1000
+        #等待空闲连接的最大等待时间（负数代表一直等待）
+        max-wait: -1ms
+        max-idle: 16
+        min-idle: 8
+
+  cache:
+    redis:
+      #缓存1个月时间
+      time-to-live: 2592000000
+    type: redis
+
+  rabbitmq:
+    host: 212.64.16.60
+    port: 5672
+    username: admin
+    password: abc123456
+
+sa-token:
+  #HTTP请求头中哪个属性用来上传令牌
+  token-name: token
+  #过期时间（秒），设置为30天
+  timeout: 2592000
+  #临时有效期，设置为3天
+  activity-timeout: 259200
+  #不允许相同账号同时在线，新登陆的账号会挤掉原来登陆的账号
+  allow-concurrent-login: false
+  #在多人登陆相同账号的时候，是否使用相同的Token
+  is-share: false
+  token-style: uuid
+  #是否读取Cookie中的令牌
+  isReadCookie: false
+  #同端互斥
+  isConcurrent: false
+  #SaToken缓存令牌用其他的逻辑库，避免业务数据和令牌数据共用相同的Redis逻辑库
+  alone-redis:
+    database: 1
+    host: 212.64.16.60
+    port: 6379
+    password: abc123456
+    timeout: 10s
+    lettuce:
+      pool:
+        # 连接池最大连接数
+        max-active: 200
+        # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-wait: 10s
+        # 连接池中的最大空闲连接
+        max-idle: 16
+        # 连接池中的最小空闲连接
+        min-idle: 8
+
+mybatis:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: org.example.his.api.db.pojo
+  configuration:
+    #输出执行的SQL语句
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    #SpringBoot日志级别
+    root: info
+    #MyBatis的日志级别
+    org.example.his.api.db.dao: warn
+  pattern:
+    console: "%d{yyyy/MM/dd HH:mm:ss}  %-5level  %msg%n"

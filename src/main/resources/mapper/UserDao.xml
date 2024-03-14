@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.his.api.db.dao.UserDao">
+    <select id="searchUserPermissions" parameterType="int" resultType="String">
+        SELECT DISTINCT p.permission_name
+        FROM tb_user u
+                 JOIN tb_role r ON JSON_CONTAINS(u.role, CAST(r.id AS CHAR))
+                 JOIN tb_permission p ON JSON_CONTAINS(r.permissions, CAST(p.id AS CHAR))
+        WHERE u.id = #{userId}
+          AND u.`status` = 1
+    </select>
+
+    <select id="login" parameterType="Map" resultType="Integer">
+        SELECT id
+        FROM tb_user
+        WHERE username = #{username}
+          AND password = #{password}
+            LIMIT 1;
+    </select>
+
+    <select id="searchUsernameById" parameterType="int" resultType="String">
+        SELECT username
+        FROM tb_user
+        WHERE id = #{userId}
+    </select>
+
+    <update id="updatePassword" parameterType="Map">
+        UPDATE tb_user
+        SET password = #{newPassword}
+        WHERE id = #{userId}
+          AND password = #{password}
+    </update>
+
+    <select id="searchByPage" parameterType="Map" resultType="HashMap">
+        /*!mycat: sql=
+        SELECT DISTINCT u.id,
+        u.name,
+        u.sex,
+        u.tel,
+        u.email,
+        d.dept_name AS dept,
+        u.hiredate,
+        u.root,
+        u.status,
+        (
+        SELECT GROUP_CONCAT( role_name separator "，" )
+        FROM tb_role
+        WHERE JSON_CONTAINS ( u.role, CONVERT (id, CHAR) )
+        ) AS roles
+        FROM tb_user u
+        JOIN tb_role r ON JSON_CONTAINS ( u.role, CONVERT (r.id, CHAR) )
+        LEFT JOIN tb_dept d ON u.dept_id = d.id
+        WHERE 1=1
+        <if test="name!=null">
+            AND u.name LIKE "%${name}%"
+        </if>
+        <if test="sex!=null">
+            AND u.sex=#{sex}
+        </if>
+        <if test="role!=null">
+            AND r.role_name=#{role}
+        </if>
+        <if test="deptId!=null">
+            AND d.id=#{deptId}
+        </if>
+        <if test="status!=null">
+            AND u.status=#{status}
+        </if>
+        ORDER BY u.id ASC
+        LIMIT #{start}, #{length}
+        */
+        SELECT DISTINCT u.id,
+        u.name,
+        u.sex,
+        u.tel,
+        u.email,
+        d.dept_name AS dept,
+        u.hiredate,
+        u.root,
+        u.status,
+        (
+        SELECT GROUP_CONCAT( role_name separator "，" )
+        FROM tb_role
+        WHERE JSON_CONTAINS ( u.role, CONVERT (id, CHAR) )
+        ) AS roles
+        FROM tb_user u
+        JOIN tb_role r ON JSON_CONTAINS ( u.role, CONVERT (r.id, CHAR) )
+        LEFT JOIN tb_dept d ON u.dept_id = d.id
+        <where>
+            <if test="name!=null">
+                AND u.name LIKE "%${name}%"
+            </if>
+            <if test="sex!=null">
+                AND u.sex=#{sex}
+            </if>
+            <if test="role!=null">
+                AND r.role_name=#{role}
+            </if>
+            <if test="deptId!=null">
+                AND d.id=#{deptId}
+            </if>
+            <if test="status!=null">
+                AND u.status=#{status}
+            </if>
+        </where>
+        ORDER BY u.id ASC
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="searchCount" parameterType="Map" resultType="long">
+        SELECT COUNT(*)
+        FROM (
+        SELECT DISTINCT u.id
+        FROM tb_user u
+        JOIN tb_role r ON JSON_CONTAINS ( u.role, CONVERT (r.id, CHAR) )
+        <where>
+            <if test="name!=null">
+                AND u.name LIKE "%${name}%"
+            </if>
+            <if test="sex!=null">
+                AND u.sex=#{sex}
+            </if>
+            <if test="role!=null">
+                AND r.role_name=#{role}
+            </if>
+            <if test="deptId!=null">
+                AND u.dept_id=#{deptId}
+            </if>
+            <if test="status!=null">
+                AND u.status=#{status}
+            </if>
+        </where>
+        ) AS temp
+    </select>
+
+
+</mapper>
