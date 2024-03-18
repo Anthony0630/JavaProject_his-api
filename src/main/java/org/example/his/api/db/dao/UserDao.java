@@ -1,6 +1,6 @@
 package org.example.his.api.db.dao;
 
-import org.springframework.data.mongodb.core.aggregation.VariableOperators;
+import org.example.his.api.db.pojo.UserEntity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +25,16 @@ public interface UserDao {
     public ArrayList<HashMap> searchByPage(Map param);
 
     public long searchCount(Map param);
+
+    public int insert(UserEntity user);
+
+    public HashMap searchById(int userId);
+
+    public int update(Map param);
+
+    public int deleteByIds(Integer[] ids);
+
+    public int dismiss(int userId);
 }
 
 

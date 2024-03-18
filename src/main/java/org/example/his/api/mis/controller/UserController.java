@@ -5,11 +5,12 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.annotation.SaMode;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ArrayUtil;
+import cn.hutool.json.JSONUtil;
 import org.example.his.api.common.PageUtils;
 import org.example.his.api.common.R;
-import org.example.his.api.mis.controller.form.LoginForm;
-import org.example.his.api.mis.controller.form.SearchUserByPageForm;
-import org.example.his.api.mis.controller.form.UpdatePasswordForm;
+import org.example.his.api.db.pojo.UserEntity;
+import org.example.his.api.mis.controller.form.*;
 import org.example.his.api.mis.service.UserService;
 import org.springframework.web.bind.annotation.*;
 
@@ -85,5 +86,61 @@ public class UserController {
         param.put("start", start);
         PageUtils pageUtils = userService.searchByPage(param);
         return R.ok().put("page", pageUtils);
+    }
+
+    @PostMapping("/insert")
+    @SaCheckPermission(value = {"ROOT", "USER:INSERT"}, mode = SaMode.OR)
+    public R insert(@Valid @RequestBody InsertUserForm form) {
+        UserEntity user = BeanUtil.toBean(form, UserEntity.class);
+        user.setStatus(1);
+        user.setRole(JSONUtil.parseArray(form.getRole()).toString());
+        int rows = userService.insert(user);
+        return R.ok().put("rows", rows);
+    }
+
+    @PostMapping("/searchById")
+    @SaCheckPermission(value = {"ROOT", "USER:SELECT"}, mode = SaMode.OR)
+    public R searchById(@Valid @RequestBody SearchUserByIdForm form) {
+        HashMap map = userService.searchById(form.getUserId());
+        return R.ok().put("result", map);
+    }
+
+    @PostMapping("/update")
+    @SaCheckPermission(value = {"ROOT", "USER:UPDATE"}, mode = SaMode.OR)
+    public R update(@Valid @RequestBody UpdateUserForm form) {
+        Map param = BeanUtil.beanToMap(form);
+        param.replace("role", JSONUtil.parseArray(form.getRole()).toString());
+        int rows = userService.update(param);
+        if (rows == 1) {
+            //该用户的Web端、APP端、小程序端等，全部退出登陆
+            StpUtil.logout(form.getUserId());
+        }
+        return R.ok().put("rows", rows);
+    }
+
+    @PostMapping("/deleteByIds")
+    @SaCheckPermission(value = {"ROOT", "USER:DELETE"}, mode = SaMode.OR)
+    public R deleteByIds(@Valid @RequestBody DeleteUserByIdsForm form) {
+        Integer userId = StpUtil.getLoginIdAsInt();
+        if (ArrayUtil.contains(form.getIds(), userId)) {
+            return R.error("您不能删除自己的帐户");
+        }
+        int rows = userService.deleteByIds(form.getIds());
+        if (rows > 0) {
+            for (Integer id : form.getIds()) {
+                StpUtil.logout(id);
+            }
+        }
+        return R.ok().put("rows", rows);
+    }
+
+    @PostMapping("/dismiss")
+    @SaCheckPermission(value = {"ROOT", "USER:UPDATE"}, mode = SaMode.OR)
+    public R dismiss(@RequestBody @Valid DismissForm form) {
+        int rows = userService.dismiss(form.getUserId());
+        if (rows > 0) {
+            StpUtil.logout(form.getUserId().intValue());
+        }
+        return R.ok().put("rows", rows);
     }
 }

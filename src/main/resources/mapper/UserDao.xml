@@ -26,6 +26,32 @@
         WHERE id = #{userId}
     </select>
 
+    <select id="searchById" parameterType="int" resultType="HashMap">
+        SELECT id, username, name, sex, tel, email, hiredate, role,
+               dept_id AS deptId,
+               status
+        FROM tb_user
+        WHERE id = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="org.example.his.api.db.dao.UserDao">
+        INSERT INTO tb_user
+        SET username = #{username},
+        password = #{password},
+        name = #{name},
+        sex = #{sex},
+        tel = #{tel},
+        email=#{email},
+        hiredate = #{hiredate},
+        role = #{role},
+        root = false,
+        <if test="deptId!=null">
+            dept_id = #{deptId},
+        </if>
+        status = #{status},
+        create_time = NOW()
+    </insert>
+
     <update id="updatePassword" parameterType="Map">
         UPDATE tb_user
         SET password = #{newPassword}
@@ -135,5 +161,33 @@
         ) AS temp
     </select>
 
+    <update id="update" parameterType="Map">
+        UPDATE tb_user
+        SET username = #{username},
+            name = #{name},
+            sex = #{sex},
+            tel = #{tel},
+            email = #{email},
+            hiredate = #{hiredate},
+            role = #{role},
+            dept_id = #{deptId}
+        WHERE id = #{userId}
+    </update>
+
+    <delete id="deleteByIds">
+        DELETE FROM tb_user
+        WHERE id IN
+        <foreach collection="array" open="(" separator="," close=")" item="one">
+            #{one}
+        </foreach>
+        AND root=FALSE
+    </delete>
+
+    <update id="dismiss" parameterType="int">
+        UPDATE tb_user
+        SET status = 2
+        WHERE id = #{userId}
+          AND root = FALSE
+    </update>
 
 </mapper>

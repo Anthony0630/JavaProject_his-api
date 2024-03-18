@@ -5,8 +5,10 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.MD5;
 import org.example.his.api.common.PageUtils;
 import org.example.his.api.db.dao.UserDao;
+import org.example.his.api.db.pojo.UserEntity;
 import org.example.his.api.mis.service.UserService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -64,5 +66,45 @@ public class UserServiceImpl implements UserService {
         int length = MapUtil.getInt(param,"length");
         PageUtils pageUtils = new PageUtils(list, count, page, length);
         return pageUtils;
+    }
+
+    @Override
+    @Transactional
+    public int insert(UserEntity user) {
+        MD5 md5 = MD5.create();
+        String temp = md5.digestHex(user.getUsername());
+        String tempStart = StrUtil.subWithLength(temp, 0, 6);
+        String tempEnd = StrUtil.subSuf(temp, temp.length() - 3);
+        String password = md5.digestHex(tempStart + user.getPassword() + tempEnd).toUpperCase();
+        user.setPassword(password);
+        int rows = userDao.insert(user);
+        return rows;
+    }
+
+    @Override
+    public HashMap searchById(int userId) {
+        HashMap map = userDao.searchById(userId);
+        return map;
+    }
+
+    @Override
+    @Transactional
+    public int update(Map param) {
+        int rows = userDao.update(param);
+        return rows;
+    }
+
+    @Override
+    @Transactional
+    public int deleteByIds(Integer[] ids) {
+        int rows = userDao.deleteByIds(ids);
+        return rows;
+    }
+
+    @Override
+    @Transactional
+    public int dismiss(int userId) {
+        int rows = userDao.dismiss(userId);
+        return rows;
     }
 }
