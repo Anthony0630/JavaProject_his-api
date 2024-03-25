@@ -130,3 +130,9 @@ logging:
     org.example.his.api.db.dao: warn
   pattern:
     console: "%d{yyyy/MM/dd HH:mm:ss}  %-5level  %msg%n"
+
+minio:
+  endpoint: http://212.64.16.60:9000
+  access-key: root
+  secret-key: abc123456
+  bucket: his

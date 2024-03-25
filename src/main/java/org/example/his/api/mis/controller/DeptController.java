@@ -73,5 +73,6 @@ public class DeptController {
         int rows = deptService.deleteByIds(form.getIds());
         return R.ok().put("rows", rows);
     }
+
 }
 

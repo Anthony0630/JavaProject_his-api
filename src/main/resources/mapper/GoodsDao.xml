@@ -3,5 +3,180 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.his.api.db.dao.GoodsDao">
+    <select id="searchByPage" parameterType="Map" resultType="HashMap">
+        SELECT g.id,
+        g.`code`,
+        g. title,
+        FORMAT( g.initial_price, 0 ) AS "initialPrice",
+        FORMAT( g.current_price, 0 ) AS "currentPrice",
+        CASE
+        WHEN LENGTH( g.sales_volume ) &lt;= 4 THEN FORMAT( g.sales_volume, 0 )
+        ELSE CONCAT(
+        FORMAT( MID( g.sales_volume, 1, LENGTH( g.sales_volume )-4), 0),
+        "万+"
+        )
+        END AS "salesVolume",
+        g.type,
+        g.part_id AS "partId",
+        r.name AS "ruleName",
+        (g.checkup IS NOT NULL) AS "hasCheckup",
+        g.`status`
+        FROM tb_goods g
+        LEFT JOIN tb_rule r ON g.rule_id = r.id
+        <where>
+            <if test="keyword!=null">
+                AND g.title LIKE CONCAT("%",#{keyword},"%")
+            </if>
+            <if test="code!=null">
+                AND g.code = #{code}
+            </if>
+            <if test="type!=null">
+                AND g.type = #{type}
+            </if>
+            <if test="partId!=null">
+                AND g.part_id = #{partId}
+            </if>
+            <if test="status!=null">
+                AND g.status = #{status}
+            </if>
+        </where>
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="searchCount" parameterType="Map" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_goods
+        <where>
+            <if test="keyword!=null">
+                AND title LIKE CONCAT("%",#{keyword},"%")
+            </if>
+            <if test="type!=null">
+                AND type = #{type}
+            </if>
+            <if test="partId!=null">
+                AND part_id = #{partId}
+            </if>
+            <if test="status!=null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" parameterType="org.example.his.api.db.pojo.GoodsEntity">
+        INSERT INTO tb_goods
+        SET code = #{code},
+            title = #{title},
+            description = #{description},
+            checkup_1 = #{checkup_1},
+            checkup_2 = #{checkup_2},
+            checkup_3 = #{checkup_3},
+            checkup_4 = #{checkup_4},
+            image = #{image},
+            initial_price = #{initialPrice},
+            current_price = #{currentPrice},
+            sales_volume = 0,
+            type = #{type},
+            tag = #{tag},
+            part_id = #{partId},
+            rule_id = #{ruleId},
+            status = false,
+            `md5` = #{md5}
+    </insert>
+
+    <select id="searchById" parameterType="Map" resultType="HashMap">
+        SELECT g.`code`,
+        g.title,
+        g.description,
+        g.image,
+        CAST(g.initial_price AS CHAR)       AS initialPrice,
+        CAST(g.current_price AS CHAR)       AS currentPrice,
+        r.`id`                              AS ruleId,
+        r.`name`                            AS ruleName,
+        g.type,
+        g.tag,
+        g.part_id                           AS partId,
+        g.checkup_1,
+        IFNULL(JSON_LENGTH(g.checkup_1), 0) AS count_1,
+        g.checkup_2,
+        IFNULL(JSON_LENGTH(g.checkup_2), 0) AS count_2,
+        g.checkup_3,
+        IFNULL(JSON_LENGTH(g.checkup_3), 0) AS count_3,
+        g.checkup_4,
+        IFNULL(JSON_LENGTH(g.checkup_4), 0) AS count_4
+        FROM tb_goods g
+        LEFT JOIN tb_rule r ON g.rule_id = r.id
+        WHERE g.id = #{id}
+        <if test="status!=null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <update id="update" parameterType="org.example.his.api.db.pojo.GoodsEntity">
+        UPDATE tb_goods
+        SET title         = #{title},
+            code          = #{code},
+            description   = #{description},
+            checkup_1     = #{checkup_1},
+            checkup_2     = #{checkup_2},
+            checkup_3     = #{checkup_3},
+            checkup_4     = #{checkup_4},
+            image         = #{image},
+            initial_price = #{initialPrice},
+            current_price = #{currentPrice},
+            type          = #{type},
+            tag           = #{tag},
+            part_id       = #{partId},
+            rule_id       = #{ruleId},
+            status        = false,
+            `md5`         =#{md5}
+        WHERE id = #{id}
+    </update>
+
+    <select id="searchEntityById" parameterType="int" resultType="org.example.his.api.db.pojo.GoodsEntity">
+        SELECT id, code, title, description, checkup_1, checkup_2, checkup_3, checkup_4, checkup, image,
+               initial_price AS initialPrice,
+               current_price AS currentPrice,
+               sales_volume AS salesVolume,
+               type, tag,
+               part_id AS partId,
+               rule_id AS ruleId,
+               status, md5,
+               update_time AS updateTime,
+               create_time AS createTime
+        FROM tb_goods
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateCheckup" parameterType="Map">
+        UPDATE tb_goods
+        SET checkup = #{checkup},
+            md5 = #{md5}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus" parameterType="Map">
+        UPDATE tb_goods
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <select id="searchImageByIds" resultType="String">
+        SELECT image
+        FROM tb_goods
+        WHERE id IN
+        <foreach collection="array" open="(" separator="," close=")" item="one">
+            #{one}
+        </foreach>
+    </select>
+
+    <delete id="deleteByIds">
+        DELETE FROM tb_goods
+        WHERE status = false
+        AND sales_volume = 0
+        AND id IN
+        <foreach collection="array" open="(" separator="," close=")" item="one">
+            #{one}
+        </foreach>
+    </delete>
 
 </mapper>

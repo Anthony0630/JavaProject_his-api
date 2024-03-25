@@ -20,4 +20,3 @@ public class PermissionServiceImpl implements PermissionService {
         return list;
     }
 }
-
