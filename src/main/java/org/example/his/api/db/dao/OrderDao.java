@@ -1,5 +1,7 @@
 package org.example.his.api.db.dao;
 
+import java.util.HashMap;
+
 /**
 * @author Anthony
 * @description 针对表【tb_order(订单表)】的数据库操作Mapper
@@ -7,8 +9,9 @@ package org.example.his.api.db.dao;
 * @Entity org.example.his.api.db.pojo.OrderEntity
 */
 public interface OrderDao {
-
+    public HashMap searchFrontStatistic(int customerId);
 }
+
 
 
 

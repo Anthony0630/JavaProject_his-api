@@ -3,5 +3,30 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.his.api.db.dao.CustomerDao">
+    <select id="searchIdByTel" parameterType="String" resultType="Integer">
+        SELECT id
+        FROM tb_customer
+        WHERE tel = #{tel}
+    </select>
+
+    <insert id="insert" parameterType="org.example.his.api.db.pojo.CustomerEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tb_customer
+        SET `name` = #{name},
+            sex = #{sex},
+            tel = #{tel},
+            photo = #{photo},
+            create_time = NOW()
+    </insert>
+
+    <select id="searchById" parameterType="int" resultType="HashMap">
+        SELECT name,
+               sex,
+               tel,
+               photo,
+               DATE_FORMAT(create_time, '%Y-%m-%d') AS createTime
+        FROM tb_customer
+        WHERE id = #{id}
+    </select>
 
 </mapper>
