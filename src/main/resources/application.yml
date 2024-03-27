@@ -136,3 +136,15 @@ minio:
   access-key: root
   secret-key: abc123456
   bucket: his
+
+wechat:
+  app-id: wx4cb8e9621950da45
+  app-secret: 098e8a39cb7a2abff01760d030a0a3c4
+  pay:
+    v3:
+      his-vue:
+        app-id: wx4cb8e9621950da45
+        app-v3-secret: b693aee4bdfb4080b93832d90b41e270
+        mch-id: 1526972031
+        domain: URL回调地址（暂时不用配置）
+        cert-path: apiclient_cert.p12

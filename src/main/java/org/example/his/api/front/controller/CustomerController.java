@@ -1,17 +1,20 @@
 package org.example.his.api.front.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.map.MapUtil;
 import org.example.his.api.common.R;
 import org.example.his.api.config.sa_token.StpCustomerUtil;
 import org.example.his.api.front.controller.form.LoginForm;
 import org.example.his.api.front.controller.form.SendSmsCodeForm;
+import org.example.his.api.front.controller.form.UpdateCustomerForm;
 import org.example.his.api.front.service.CustomerService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.HashMap;
+import java.util.Map;
 
 @RestController("FrontCustomerController")
 @RequestMapping("/front/customer")
@@ -62,5 +65,15 @@ public class CustomerController {
         int id = StpCustomerUtil.getLoginIdAsInt();
         HashMap map = customerService.searchSummary(id);
         return R.ok().put("result", map);
+    }
+
+    @PostMapping("/update")
+    @SaCheckLogin(type = StpCustomerUtil.TYPE)
+    public R update(@RequestBody @Valid UpdateCustomerForm form) {
+        int id = StpCustomerUtil.getLoginIdAsInt();
+        Map<String, Object> param = BeanUtil.beanToMap(form);
+        param.put("id", id);
+        boolean bool = customerService.update(param);
+        return R.ok().put("result", bool);
     }
 }

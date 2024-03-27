@@ -4,12 +4,14 @@ import cn.hutool.core.map.MapUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.example.his.api.common.PageUtils;
 import org.example.his.api.db.dao.GoodsDao;
 import org.example.his.api.front.service.GoodsService;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,6 +38,29 @@ public class GoodsServiceImpl implements GoodsService {
             return map;
         }
         return null;
+    }
+
+    @Override
+    public HashMap searchIndexGoodsByPart(Integer[] partIds) {
+        HashMap map = new HashMap();
+        for (int partId : partIds) {
+            ArrayList<HashMap> list = goodsDao.searchByPartIdLimit4(partId);
+            map.put(partId, list);
+        }
+        return map;
+    }
+
+    @Override
+    public PageUtils searchListByPage(Map param) {
+        ArrayList<HashMap> list = new ArrayList<>();
+        long count = goodsDao.searchListCount(param);
+        if (count > 0) {
+            list = goodsDao.searchListByPage(param);
+        }
+        int page = MapUtil.getInt(param, "page");
+        int length = MapUtil.getInt(param, "length");
+        PageUtils pageUtils = new PageUtils(list, count, page, length);
+        return pageUtils;
     }
 }
 

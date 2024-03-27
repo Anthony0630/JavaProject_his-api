@@ -179,4 +179,108 @@
         </foreach>
     </delete>
 
+    <select id="searchByPartIdLimit4" parameterType="int" resultType="HashMap">
+        SELECT id,
+               `code`,
+               title,
+               description,
+               image,
+               initial_price AS "initialPrice",
+               current_price AS "currentPrice",
+               sales_volume  AS "salesVolume"
+        FROM tb_goods
+        WHERE `status` = 1
+          AND part_id = #{partId}
+        ORDER BY sales_volume DESC, id DESC
+        LIMIT 4
+    </select>
+
+    <select id="searchListByPage" parameterType="Map" resultType="HashMap">
+        SELECT id,
+        `code`,
+        title,
+        description,
+        image,
+        initial_price AS "initialPrice",
+        current_price AS "currentPrice",
+        sales_volume AS "salesVolume"
+        FROM tb_goods
+        WHERE `status` = 1
+        <if test="keyword!=null">
+            AND ( title LIKE CONCAT("%",#{keyword},"%") OR
+            code LIKE CONCAT("%",#{keyword},"%")
+            )
+        </if>
+        <if test="type!=null">
+            AND type = #{type}
+        </if>
+        <if test="sex!=null">
+            AND JSON_CONTAINS (tag, CONCAT('"',#{sex},'"'))
+        </if>
+        <choose>
+            <when test="priceType==1">
+                AND current_price &gt;= 0 AND current_price &lt; 100
+            </when>
+            <when test="priceType==2">
+                AND current_price &gt;= 100 AND current_price &lt; 500
+            </when>
+            <when test="priceType==3">
+                AND current_price &gt;= 500 AND current_price &lt; 1000
+            </when>
+            <when test="priceType==4">
+                AND current_price &gt;= 1000
+            </when>
+        </choose>
+        <choose>
+            <when test="orderType==1">
+                ORDER BY id DESC
+            </when>
+            <when test="orderType==2">
+                ORDER BY sales_volume DESC
+            </when>
+            <when test="orderType==3">
+                ORDER BY currentPrice ASC
+            </when>
+            <when test="orderType==4">
+                ORDER BY currentPrice DESC
+            </when>
+            <otherwise>
+                ORDER BY sales_volume DESC, id DESC
+            </otherwise>
+        </choose>
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="searchListCount" parameterType="Map" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_goods
+        WHERE `status` = 1
+        <if test="keyword!=null">
+            AND ( title LIKE CONCAT("%",#{keyword},"%") OR
+            code LIKE CONCAT("%",#{keyword},"%")
+            )
+        </if>
+        <if test="type!=null">
+            AND type = #{type}
+        </if>
+        <if test="sex!=null">
+            AND JSON_CONTAINS (tag, CONCAT('"',#{sex},'"'))
+        </if>
+        <choose>
+            <when test="priceType==1">
+                AND current_price &gt;= 0 AND current_price &lt; 100
+            </when>
+            <when test="priceType==2">
+                AND current_price &gt;= 100 AND current_price &lt; 500
+            </when>
+            <when test="priceType==3">
+                AND current_price &gt;= 500 AND current_price &lt; 1000
+            </when>
+            <when test="priceType==4">
+                AND current_price &gt;= 1000
+            </when>
+        </choose>
+    </select>
+
+
 </mapper>

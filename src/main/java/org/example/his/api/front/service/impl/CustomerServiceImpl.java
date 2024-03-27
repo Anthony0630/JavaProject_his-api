@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service("FrontCustomerServiceImpl")
@@ -98,5 +99,12 @@ public class CustomerServiceImpl implements CustomerService {
         HashMap map = customerDao.searchById(id);
         map.putAll(orderDao.searchFrontStatistic(id));
         return map;
+    }
+
+    @Override
+    @Transactional
+    public boolean update(Map param) {
+        int rows = customerDao.update(param);
+        return rows == 1;
     }
 }

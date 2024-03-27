@@ -29,4 +29,12 @@
         WHERE id = #{id}
     </select>
 
+    <update id="update" parameterType="Map">
+        UPDATE tb_customer
+        SET name = #{name},
+            sex  = #{sex},
+            tel  = #{tel}
+        WHERE id = #{id}
+    </update>
+
 </mapper>

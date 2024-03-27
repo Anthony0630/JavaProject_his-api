@@ -3,6 +3,7 @@ package org.example.his.api.db.dao;
 import org.example.his.api.db.pojo.CustomerEntity;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
 * @author Anthony
@@ -14,6 +15,7 @@ public interface CustomerDao {
     public Integer searchIdByTel(String tel);
     public void insert(CustomerEntity entity);
     public HashMap searchById(int id);
+    public int update(Map param);
 }
 
 
