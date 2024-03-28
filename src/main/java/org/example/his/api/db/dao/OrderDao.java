@@ -10,6 +10,8 @@ import java.util.HashMap;
 */
 public interface OrderDao {
     public HashMap searchFrontStatistic(int customerId);
+    public boolean searchIllegalCountInDay(int customerId);
+    public int closeOrder();
 }
 
 

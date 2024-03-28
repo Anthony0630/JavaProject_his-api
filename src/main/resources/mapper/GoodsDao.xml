@@ -282,5 +282,26 @@
         </choose>
     </select>
 
+    <select id="searchSnapshotNeededById" parameterType="int" resultType="HashMap">
+        SELECT g.`code`,
+               g.title,
+               g.description,
+               g.image,
+               CAST(g.initial_price AS CHAR) AS initialPrice,
+               CAST(g.current_price AS CHAR) AS currentPrice,
+               r.name AS ruleName,
+               r.rule,
+               g.type,
+               g.tag,
+               g.checkup_1,
+               g.checkup_2,
+               g.checkup_3,
+               g.checkup_4,
+               g.checkup,
+               g.`md5`
+        FROM tb_goods g
+                 LEFT JOIN tb_rule r ON g.rule_id = r.id
+        WHERE g.id = #{id}
+    </select>
 
 </mapper>
