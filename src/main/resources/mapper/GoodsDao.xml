@@ -304,4 +304,10 @@
         WHERE g.id = #{id}
     </select>
 
+    <update id="updateSalesVolume" parameterType="int">
+        UPDATE tb_goods
+        SET sales_volume = sales_volume + 1
+        WHERE id = #{id}
+    </update>
+
 </mapper>

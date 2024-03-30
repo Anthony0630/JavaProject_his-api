@@ -5,13 +5,19 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.extra.qrcode.QrCodeUtil;
+import cn.hutool.extra.qrcode.QrConfig;
 import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ql.util.express.DefaultContext;
 import com.ql.util.express.ExpressRunner;
 import lombok.extern.slf4j.Slf4j;
+import org.example.his.api.common.PageUtils;
 import org.example.his.api.db.dao.GoodsDao;
+import org.example.his.api.db.dao.GoodsSnapshotDao;
 import org.example.his.api.db.dao.OrderDao;
+import org.example.his.api.db.pojo.GoodsSnapshotEntity;
+import org.example.his.api.db.pojo.OrderEntity;
 import org.example.his.api.exception.HisException;
 import org.example.his.api.front.service.OrderService;
 import org.example.his.api.front.service.PaymentService;
@@ -21,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +48,11 @@ public class OrderServiceImpl implements OrderService {
     private RedisTemplate redisTemplate;
 
     private String paymentNotifyUrl = "/front/order/paymentCallback";
+
+    @Resource
+    private GoodsSnapshotDao goodsSnapshotDao;
+
+    private String refundNotifyUrl = "/front/order/refundCallback";
 
     @Override
     @Transactional
@@ -129,11 +141,177 @@ public class OrderServiceImpl implements OrderService {
         redisTemplate.opsForValue().set(key, codeUrl);
         redisTemplate.expireAt(key, dateTime); //设置缓存过期时间
 
-        //TODO 如果不存在该商品快照，就创建快照记录
-        //TODO 保存订单记录
-        //TODO 更新商品销量
-        //TODO 付款二维码图片转换成base64字符串返回给前端
+        // 如果不存在该商品快照，就创建快照记录
+        if (codeUrl != null) {
+            //根据商品md5查询是否存在快照
+            String _id = goodsSnapshotDao.hasGoodsSnapshot(goodsMd5);
+            //如果不存在商品快照就创建快照
+            if (_id == null) {
+                GoodsSnapshotEntity entity = new GoodsSnapshotEntity();
+                entity.setId(goodsId);
+                entity.setCode(goodsCode);
+                entity.setTitle(goodsTitle);
+                entity.setDescription(goodsDescription);
+                entity.setCheckup_1(goodsCheckup_1);
+                entity.setCheckup_2(goodsCheckup_2);
+                entity.setCheckup_3(goodsCheckup_3);
+                entity.setCheckup_4(goodsCheckup_4);
+                entity.setCheckup(goodsCheckup);
+                entity.setImage(goodsImage);
+                entity.setInitialPrice(goodsInitialPrice);
+                entity.setCurrentPrice(goodsCurrentPrice);
+                entity.setType(goodsType);
+                entity.setTag(goodsTag);
+                entity.setRuleName(goodsRuleName);
+                entity.setRule(goodsRule);
+                entity.setMd5(goodsMd5);
+
+                //保存商品快照，拿到快照的主键值
+                _id = goodsSnapshotDao.insert(entity);
+            }
+
+            OrderEntity entity = new OrderEntity();
+            entity.setCustomerId(customerId);
+            entity.setGoodsId(goodsId);
+            entity.setSnapshotId(_id); //关联商品快照
+
+            entity.setGoodsTitle(goodsTitle);
+            entity.setGoodsPrice(goodsCurrentPrice);
+            entity.setNumber(number);
+            entity.setAmount(new BigDecimal(amount));
+            entity.setGoodsImage(goodsImage);
+            entity.setGoodsDescription(goodsDescription);
+            entity.setOutTradeNo(outTradeNo);
+
+        // 保存订单记录
+            orderDao.insert(entity);
+            // 付款二维码图片转换成base64字符串返回给前端
+            QrConfig qrConfig = new QrConfig();
+            qrConfig.setWidth(230);
+            qrConfig.setHeight(230);
+            qrConfig.setMargin(2);
+            String qrCodeBase64 = QrCodeUtil.generateAsBase64(codeUrl, qrConfig, "jpg");
+
+        // 更新商品销量
+            int rows = goodsDao.updateSalesVolume(goodsId);
+            if (rows != 1) {
+                throw new HisException("更新商品销量失败");
+            }
+            return new HashMap() {{
+                put("qrCodeBase64", qrCodeBase64);
+                put("outTradeNo", outTradeNo);
+            }};
+        } else {
+            log.error("创建支付订单失败", objectNode);
+            throw new HisException("创建支付订单失败");
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean updatePayment(Map param) {
+        int rows = orderDao.updatePayment(param);
+        return rows == 1;
+    }
+
+    @Override
+    public Integer searchCustomerId(String outTradeNo) {
+        Integer customerId = orderDao.searchCustomerId(outTradeNo);
+        return customerId;
+    }
+
+    @Override
+    @Transactional
+    public boolean searchPaymentResult(String outTradeNo) {
+        String transactionId = paymentService.searchPaymentResult(outTradeNo);
+        if (transactionId != null) {
+            this.updatePayment(new HashMap() {{
+                put("outTradeNo", outTradeNo);
+                put("transactionId", transactionId);
+            }});
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public PageUtils searchByPage(Map param) {
+        ArrayList<HashMap> list = new ArrayList<>();
+        long count = orderDao.searchFrontOrderCount(param);
+        if (count > 0) {
+            list = orderDao.searchFrontOrderByPage(param);
+        }
+        int start = (Integer) param.get("start");
+        int length = (Integer) param.get("length");
+        PageUtils pageUtils = new PageUtils(list, count, start, length);
+        return pageUtils;
+    }
+
+    @Override
+    @Transactional
+    public boolean refund(Map param) {
+        //先查询订单是否存在退款流水号，避免用户重复申请退款
+        int id = MapUtil.getInt(param, "id");
+        String outRefundNo = orderDao.searchAlreadyRefund(id);
+        //判断该订单是否申请退款了
+        if (outRefundNo != null) {
+            return false;
+        }
+
+        HashMap map = orderDao.searchRefundNeeded(param);
+        String transactionId = MapUtil.getStr(map, "transactionId");
+        String amount = MapUtil.getStr(map, "amount");
+
+        // int total = NumberUtil.mul(amount, "100").intValue();  //总金额
+        int total = 1;
+        //int refund = total;   //退款金额
+        int refund = 1; //退款1分钱
+
+        if (transactionId == null) {
+            log.error("transactionId不能为空");
+            return false;
+        }
+        //执行退款
+        outRefundNo = paymentService.refund(transactionId, refund, total, refundNotifyUrl);
+        param.put("outRefundNo", outRefundNo);
+        if (outRefundNo != null) {
+            //更新退款流水号和退款日期时间
+            int rows = orderDao.updateOutRefundNo(param);
+            if (rows == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    @Transactional
+    public boolean updateRefundStatus(String outRefundNo) {
+        int rows = orderDao.updateRefundStatusByOutRefundNo(outRefundNo);
+        return rows == 1;
+    }
+
+    @Override
+    public String payOrder(int customerId, String outTradeNo) {
+        String key = "codeUrl_" + customerId + "_" + outTradeNo;
+        if (redisTemplate.hasKey(key)) {
+            //从Redis中取出缓存的付款URL
+            String codeUrl = redisTemplate.opsForValue().get(key).toString();
+            QrConfig qrConfig = new QrConfig();
+            qrConfig.setWidth(230);
+            qrConfig.setHeight(230);
+            qrConfig.setMargin(2);
+            String qrCodeBase64 = QrCodeUtil.generateAsBase64(codeUrl, qrConfig, "jpg");
+            return qrCodeBase64;
+        }
         return null;
+    }
+
+    @Override
+    public boolean closeOrderById(Map param) {
+        int rows = orderDao.closeOrderById(param);
+        return rows == 1;
     }
 }
 

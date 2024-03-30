@@ -38,4 +38,135 @@
           AND TIMESTAMPDIFF(MINUTE, create_time, NOW()) > 30
     </update>
 
+    <insert id="insert">
+        INSERT INTO tb_order
+        SET customer_id = #{customerId},
+            goods_id = #{goodsId},
+            snapshot_id = #{snapshotId},
+            goods_title = #{goodsTitle},
+            goods_price = #{goodsPrice},
+            number = #{number},
+            amount = #{amount},
+            goods_image = #{goodsImage},
+            goods_description = #{goodsDescription},
+            out_trade_no = #{outTradeNo},
+            status = 1,
+            create_date = CURRENT_DATE()
+    </insert>
+
+    <update id="updatePayment" parameterType="Map">
+        UPDATE tb_order
+        SET transaction_id= #{transactionId},
+            status = 3
+        WHERE out_trade_no = #{outTradeNo}
+          AND status = 1
+    </update>
+
+    <select id="searchCustomerId" parameterType="String" resultType="Integer">
+        SELECT customer_id
+        FROM tb_order
+        WHERE out_trade_no = #{outTradeNo}
+    </select>
+
+    <select id="searchFrontOrderByPage" parameterType="Map" resultType="HashMap">
+        SELECT o.id,
+        o.out_trade_no AS outTradeNo,
+        o.goods_id AS goodsId,
+        o.snapshot_id AS snapshotId,
+        o.goods_title AS goodsTitle,
+        o.goods_price AS goodsPrice,
+        o.number,
+        o.amount,
+        o.goods_image AS goodsImage,
+        o.goods_description AS goodsDescription,
+        o.`status`,
+        IF(o.`status` = 1 AND TIMESTAMPDIFF(MINUTE,o.create_time,NOW()) > 20, true, false) AS disabled,
+        DATE_FORMAT(o.create_date,"%Y-%m-%d") AS createDate,
+        DATE_FORMAT(o.create_time,"%Y-%m-%d %H:%i:%s") AS createTime,
+        COUNT(a.id) AS appointCount
+        FROM tb_order o
+        LEFT JOIN tb_appointment a ON o.id = a.order_id
+        WHERE o.customer_id = #{customerId}
+        <if test="status!=null">
+            AND o.`status` = #{status}
+        </if>
+        <if test="keyword!=null">
+            AND ( o.out_trade_no = #{keyword} OR o.goods_title LIKE CONCAT( "%", #{keyword}, "%" ) )
+        </if>
+        GROUP BY o.id
+        ORDER BY o.id DESC
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="searchFrontOrderCount" parameterType="Map" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_order
+        WHERE customer_id = #{customerId}
+        <if test="status!=null">
+            AND `status` = #{status}
+        </if>
+        <if test="keyword!=null">
+            AND (
+            out_trade_no = #{keyword} OR goods_title LIKE CONCAT( "%", #{keyword}, "%" )
+            )
+        </if>
+    </select>
+
+    <select id="searchAlreadyRefund" parameterType="int" resultType="String">
+        SELECT out_refund_no AS outRefundNo
+        FROM tb_order
+        WHERE id = #{id}
+    </select>
+
+    <select id="searchRefundNeeded" parameterType="Map" resultType="HashMap">
+        SELECT transaction_id AS transactionId,
+               amount AS amount
+        FROM tb_order
+        WHERE id = #{id}
+          AND status = 3
+          AND customer_id = #{customerId}
+    </select>
+
+    <update id="updateOutRefundNo" parameterType="Map">
+        UPDATE tb_order
+        SET out_refund_no = #{outRefundNo},
+            refund_date = CURRENT_DATE(),
+            refund_time = NOW()
+        WHERE id = #{id}
+          AND status = 3
+    </update>
+
+    <update id="updateRefundStatusByOutRefundNo" parameterType="String">
+        UPDATE tb_order
+        SET status = 4
+        WHERE out_refund_no = #{outRefundNo}
+          AND status = 3
+    </update>
+
+    <!--查询已经申请退款的订单，并且申请时间距今已经超过30分钟-->
+    <select id="searchTimeoutRefund" resultType="HashMap">
+        SELECT id,
+               out_refund_no AS outRefundNo
+        FROM tb_order
+        WHERE status = 3
+          AND refund_date IS NOT NULL
+          AND TIMESTAMPDIFF(MINUTE, refund_time, NOW()) > 30
+    </select>
+
+    <!--更新订单的状态-->
+    <update id="updateRefundStatusById" parameterType="int">
+        UPDATE tb_order
+        SET status = 4
+        WHERE id = #{id}
+          AND status = 3
+    </update>
+
+    <update id="closeOrderById"  parameterType="Map">
+        UPDATE tb_order
+        SET status = 2
+        WHERE id = #{id}
+          AND customer_id = #{customerId}
+          AND status = 1
+    </update>
+
 </mapper>

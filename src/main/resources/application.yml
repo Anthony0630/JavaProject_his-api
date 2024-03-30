@@ -12,11 +12,11 @@ server:
   servlet:
     context-path: /his-api
 
-  ssl:
-    enabled: true
-    key-store-type: PKCS12
-    key-store: classpath:keystore.p12
-    key-store-password: abc123456
+#  ssl:
+#    enabled: true
+#    key-store-type: PKCS12
+#    key-store: classpath:keystore.p12
+#    key-store-password: abc123456
 
 spring:
   servlet:
@@ -146,5 +146,5 @@ wechat:
         app-id: wx4cb8e9621950da45
         app-v3-secret: b693aee4bdfb4080b93832d90b41e270
         mch-id: 1526972031
-        domain: URL回调地址（暂时不用配置）
+        domain: http://s2.s100.vip:36782/his-api
         cert-path: apiclient_cert.p12

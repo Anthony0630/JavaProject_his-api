@@ -27,6 +27,7 @@ public interface GoodsDao {
     public ArrayList<HashMap> searchListByPage(Map param);
     public long searchListCount(Map param);
     public HashMap searchSnapshotNeededById(int id);
+    public int updateSalesVolume(int id);
 }
 
 
