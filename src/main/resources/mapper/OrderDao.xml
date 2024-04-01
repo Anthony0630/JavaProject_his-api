@@ -59,7 +59,7 @@
         SET transaction_id= #{transactionId},
             status = 3
         WHERE out_trade_no = #{outTradeNo}
-          AND status = 1
+          AND status IN (1,2)
     </update>
 
     <select id="searchCustomerId" parameterType="String" resultType="Integer">
@@ -168,5 +168,90 @@
           AND customer_id = #{customerId}
           AND status = 1
     </update>
+
+    <select id="searchByPage" parameterType="Map" resultType="HashMap">
+        SELECT o.id,
+        o.goods_title AS goodsTitle,
+        FORMAT(o.goods_price,0) AS goodsPrice,
+        o.snapshot_id AS snapshotId,
+        o.number,
+        FORMAT(o.amount,0) AS amount,
+        c.photo,
+        c.name,
+        c.sex,
+        c.tel,
+        DATE_FORMAT(c.create_time,"%Y-%m-%d") AS registerTime,
+        o.`status`,
+        o.out_trade_no AS outTradeNo,
+        o.transaction_id AS transactionId,
+        o.out_refund_no AS outRefundNo,
+        o.create_date AS createDate,
+        DATE_FORMAT(o.create_time,"%Y-%m-%d %H:%i") AS createTime,
+        o.refund_date AS refundDate,
+        DATE_FORMAT(o.refund_time,"%Y-%m-%d %H:%i") AS refundTime,
+        COUNT(a.id) AS num
+        FROM tb_order o
+        JOIN tb_customer c ON o.customer_id = c.id
+        JOIN tb_goods g ON o.goods_id = g.id
+        LEFT JOIN tb_appointment a ON a.order_id = o.id
+        <where>
+            <if test="tel!=null">
+                AND c.tel = #{tel}
+            </if>
+            <if test="code!=null">
+                AND g.`code` = #{code}
+            </if>
+            <if test="status!=null">
+                AND o.status = #{status}
+            </if>
+            <if test="startDate!=null and endDate!=null">
+                AND o.create_date BETWEEN #{startDate} AND #{endDate}
+            </if>
+            <if test="keyword!=null">
+                AND o.goods_title LIKE CONCAT("%",#{keyword},"%")
+            </if>
+        </where>
+        GROUP BY o.id
+        ORDER BY o.id DESC
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="searchCount" parameterType="Map" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_order o
+        JOIN tb_goods g ON o.goods_id = g.id
+        JOIN tb_customer c ON o.customer_id = c.id
+        <where>
+            <if test="tel!=null">
+                AND c.tel = #{tel}
+            </if>
+            <if test="code!=null">
+                AND g.`code` = #{code}
+            </if>
+            <if test="status!=null">
+                AND o.status = #{status}
+            </if>
+            <if test="startDate!=null and endDate!=null">
+                AND o.create_date BETWEEN #{startDate} AND #{endDate}
+            </if>
+            <if test="keyword!=null">
+                AND o.goods_title LIKE CONCAT("%",#{keyword},"%")
+            </if>
+        </where>
+    </select>
+
+    <delete id="deleteById" parameterType="int">
+        DELETE FROM tb_order
+        WHERE id = #{id}
+          AND status = 2
+    </delete>
+
+    <select id="hasOwnSnapshot" parameterType="Map" resultType="Integer">
+        SELECT id
+        FROM tb_order
+        WHERE customer_id = #{customerId}
+          AND snapshot_id = #{snapshotId}
+        LIMIT 1
+    </select>
 
 </mapper>

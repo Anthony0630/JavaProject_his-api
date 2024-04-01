@@ -1,5 +1,8 @@
 package org.example.his.api.db.dao;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
 * @author Anthony
 * @description 针对表【tb_appointment(体检预约表)】的数据库操作Mapper
@@ -7,8 +10,9 @@ package org.example.his.api.db.dao;
 * @Entity org.example.his.api.db.pojo.AppointmentEntity
 */
 public interface AppointmentDao {
-
+    public ArrayList<HashMap> searchByOrderId(int orderId);
 }
+
 
 
 

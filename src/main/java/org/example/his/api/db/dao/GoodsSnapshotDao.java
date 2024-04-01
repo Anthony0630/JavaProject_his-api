@@ -26,5 +26,10 @@ public class GoodsSnapshotDao {
         String _id = mongoTemplate.save(entity).get_id();
         return _id;
     }
+
+    public GoodsSnapshotEntity searchById(String id) {
+        GoodsSnapshotEntity entity = mongoTemplate.findById(id, GoodsSnapshotEntity.class);
+        return entity;
+    }
 }
 

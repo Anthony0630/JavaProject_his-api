@@ -1,10 +1,13 @@
 package org.example.his.api.front.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.hutool.core.bean.BeanUtil;
 import org.example.his.api.common.PageUtils;
 import org.example.his.api.common.R;
+import org.example.his.api.config.sa_token.StpCustomerUtil;
 import org.example.his.api.front.controller.form.SearchGoodsByIdForm;
 import org.example.his.api.front.controller.form.SearchGoodsListByPageForm;
+import org.example.his.api.front.controller.form.SearchGoodsSnapshotByIdForm;
 import org.example.his.api.front.controller.form.SearchIndexGoodsByPartForm;
 import org.example.his.api.front.service.GoodsService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,6 +47,21 @@ public class GoodsController {
         param.put("start", start);
         PageUtils pageUtils = goodsService.searchListByPage(param);
         return R.ok().put("page", pageUtils);
+    }
+
+    @PostMapping("/searchSnapshotForMis")
+    @SaCheckLogin
+    public R searchSnapshotForMis(@RequestBody @Valid SearchGoodsSnapshotByIdForm form){
+        HashMap map = goodsService.searchSnapshotById(form.getSnapshotId(), null);
+        return R.ok().put("result", map);
+    }
+
+    @PostMapping("/searchSnapshotForFront")
+    @SaCheckLogin(type = StpCustomerUtil.TYPE)
+    public R searchSnapshotForFront(@RequestBody @Valid SearchGoodsSnapshotByIdForm form) {
+        int customerId = StpCustomerUtil.getLoginIdAsInt();
+        HashMap map = goodsService.searchSnapshotById(form.getSnapshotId(), customerId);
+        return R.ok().put("result", map);
     }
 }
 

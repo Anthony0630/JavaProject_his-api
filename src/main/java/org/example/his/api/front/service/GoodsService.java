@@ -9,5 +9,6 @@ public interface GoodsService {
     public HashMap searchById(int id);
     public HashMap searchIndexGoodsByPart(Integer[] partIds);
     public PageUtils searchListByPage(Map param);
+    public HashMap searchSnapshotById(String snapshotId, Integer customerId);
 }
 

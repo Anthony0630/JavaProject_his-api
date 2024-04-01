@@ -3,10 +3,64 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.his.api.db.dao.RuleDao">
-
     <select id="searchAllRule" resultType="HashMap">
         SELECT id, name
         FROM tb_rule
     </select>
+
+    <select id="searchByPage" parameterType="Map" resultType="HashMap">
+        SELECT r.id,
+        r.name,
+        IFNULL(tmp.count, 0) AS count,
+        r.remark
+        FROM tb_rule r
+        LEFT JOIN ( SELECT rule_id, COUNT(*) AS count FROM tb_goods GROUP BY rule_id ) tmp ON r.id = tmp.rule_id
+        <where>
+            <if test="name!=null">
+                AND r.name LIKE CONCAT('%',#{name},'%')
+            </if>
+        </where>
+        LIMIT #{start}, #{length}
+    </select>
+
+    <select id="searchCount" parameterType="Map" resultType="long">
+        SELECT COUNT(*)
+        FROM tb_rule
+        <where>
+            <if test="name!=null">
+                AND name LIKE CONCAT('%',#{name},'%')
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" parameterType="org.example.his.api.db.pojo.RuleEntity">
+        INSERT INTO tb_rule
+        SET name = #{name},
+            rule = #{rule},
+            remark = #{remark}
+    </insert>
+
+    <select id="searchById" parameterType="int" resultType="HashMap">
+        SELECT name, rule, remark
+        FROM tb_rule
+        WHERE id = #{id}
+    </select>
+
+    <update id="update" parameterType="org.example.his.api.db.pojo.RuleEntity">
+        UPDATE tb_rule
+        SET name = #{name},
+            rule = #{rule},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="int">
+        DELETE r
+        FROM tb_rule r
+                 LEFT JOIN ( SELECT rule_id, COUNT(*) AS count FROM tb_goods WHERE rule_id = #{id} ) tmp
+                           ON r.id = tmp.rule_id
+        WHERE r.id = #{id}
+          AND IFNULL( tmp.count, 0 ) = 0
+    </delete>
 
 </mapper>
