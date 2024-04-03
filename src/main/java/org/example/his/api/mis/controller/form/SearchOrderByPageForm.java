@@ -36,5 +36,7 @@ public class SearchOrderByPageForm {
     @Range(min = 5, max = 50, message = "length必须为10~50之间")
     private Integer length;
 
+    @Min(value = 1, message = "customerId不能小于1")
+    private Integer customerId;
 }
 

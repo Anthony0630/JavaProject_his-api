@@ -7,8 +7,9 @@ package org.example.his.api.db.dao;
 * @Entity org.example.his.api.db.pojo.CustomerImEntity
 */
 public interface CustomerImDao {
-
+    public int insert(int customerId);
 }
+
 
 
 

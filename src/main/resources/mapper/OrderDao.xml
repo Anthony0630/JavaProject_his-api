@@ -210,6 +210,9 @@
             <if test="keyword!=null">
                 AND o.goods_title LIKE CONCAT("%",#{keyword},"%")
             </if>
+            <if test="customerId!=null">
+                AND c.id = #{customerId}
+            </if>
         </where>
         GROUP BY o.id
         ORDER BY o.id DESC
@@ -236,6 +239,9 @@
             </if>
             <if test="keyword!=null">
                 AND o.goods_title LIKE CONCAT("%",#{keyword},"%")
+            </if>
+            <if test="customerId!=null">
+                AND c.id = #{customerId}
             </if>
         </where>
     </select>
